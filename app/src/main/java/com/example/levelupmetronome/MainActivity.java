@@ -15,12 +15,14 @@ import java.io.InputStream;
 public class MainActivity extends AppCompatActivity {
 
     private AudioTrack player;
+    private int bpm;
+    private int beatsPerBar;
 
     public void playSound()  {
         player.play();
     }
 
-    public void initialiseSound(int bpm) {
+    public void initialiseSound() {
         InputStream firstBeat = getResources().openRawResource(R.raw.beat1);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         byte[] b = new byte[1024];
@@ -72,7 +74,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        initialiseSound(300);
+        bpm = 120;
+        beatsPerBar = 4;
+        initialiseSound();
 
         setContentView(R.layout.activity_main);
     }
