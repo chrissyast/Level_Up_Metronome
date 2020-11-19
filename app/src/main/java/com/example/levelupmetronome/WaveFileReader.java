@@ -1,6 +1,7 @@
 package com.example.levelupmetronome;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -24,23 +25,37 @@ public class WaveFileReader {
     private int sampleRate;
     private int dataSize;
     private int bitsPerSample;
+    private byte[] dataChunk;
 
-    public WaveFileReader (byte[] data) throws NoSuchFieldException, IllegalAccessException {
-        {
+    public WaveFileReader (InputStream beat) throws NoSuchFieldException, IllegalAccessException {
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            byte[] b = new byte[1024];
+            try {
+                for (int readNum; (readNum = beat.read(b)) != -1; ) {
+                    bos.write(b, 0, readNum);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            byte[] fileByteArray = bos.toByteArray();
+
             for (WavFileProperty property : properties) {
                 int chunkStart = 0;
                 if (null != property.chunk) {
-                    chunkStart = startOfChunk(data, property.chunk);
+                    chunkStart = startOfChunk(fileByteArray, property.chunk);
                 }
-                property.index = chunkStart + property.offsetWithinChunk;
+                property.setIndex(chunkStart + property.offsetWithinChunk);
                 int start = property.index;
                 int length = property.length;
-                byte[] propertyData = Arrays.copyOfRange(data, start, start+length );
-                int foo = (int) makePropertyLegible(property, propertyData);
+                byte[] propertyData = Arrays.copyOfRange(fileByteArray, start, start+length);
+                int value = (int) makePropertyLegible(property, propertyData);
                 Field field = getClass().getDeclaredField(property.propertyName);
-                field.setInt(this, foo);
+                field.set(this, value);
             }
-        }
+            int startOfData = startOfChunk(fileByteArray, "data");
+            byte[] dataChunk = Arrays.copyOfRange(fileByteArray, startOfData, fileByteArray.length);
+            this.dataChunk = dataChunk;
     }
 
     public static Object makePropertyLegible(WavFileProperty property, byte[] data) {
@@ -65,6 +80,7 @@ public class WaveFileReader {
             }
             return output;
         }
+        // TODO hex big endian
         return null;
     }
 
@@ -130,5 +146,9 @@ public class WaveFileReader {
 
     public double dataSizePerMillisecond() {
         return ((double) sampleRate * numChannels * bitsPerSample  / 8 / 1000);
+    }
+
+    public byte[] getDataChunk() {
+        return dataChunk;
     }
 }

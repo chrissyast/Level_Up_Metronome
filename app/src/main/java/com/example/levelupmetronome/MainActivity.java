@@ -18,31 +18,34 @@ public class MainActivity extends AppCompatActivity {
     private int bpm;
     private int beatsPerBar;
 
-    public void playSound()  {
+    private void playSound()  {
         player.play();
     }
 
-    public void initialiseSound() {
+    private int millis() {
+        return 1000 * 60 / bpm;
+    }
+
+    private void initialiseSound() {
         InputStream firstBeat = getResources().openRawResource(R.raw.beat1);
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        byte[] b = new byte[1024];
-        try {
-            for (int readNum; (readNum = firstBeat.read(b)) != -1; ) {
-                bos.write(b, 0, readNum);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        int startOfData = bos.toString().indexOf("data")+8;
-        byte[] byteArray = bos.toByteArray();
-        int millis = 1000 * 60 / bpm;
+        InputStream otherBeat = getResources().openRawResource(R.raw.otherbeats);
 
         try {
-            WaveFileReader reader = new WaveFileReader(byteArray);
-            byte[] fullLengthByteArray = addSilence(bos, millis, reader);
-            int fullBufferSize = fullLengthByteArray.length - startOfData;
-            int bytesPerSample = reader.getBitsPerSample() * reader.getNumChannels() / 8;
+            WaveFileReader firstBeatReader = new WaveFileReader(firstBeat);
+            WaveFileReader otherBeatReader = new WaveFileReader(otherBeat);
+            byte[] fullLengthFirstBeat = createBeatWithSilence(firstBeatReader);
+            byte[] fullLengthOtherBeat = createBeatWithSilence(otherBeatReader);
+            ByteArrayOutputStream finalSound = new ByteArrayOutputStream();
+            finalSound.write(fullLengthFirstBeat);
+            finalSound.write(fullLengthOtherBeat);
+            finalSound.write(fullLengthOtherBeat);
+            finalSound.write(fullLengthOtherBeat);
+            byte[] finalBytes = finalSound.toByteArray();
+
+            int fullBufferSize = (fullLengthFirstBeat.length)
+                    * beatsPerBar
+                    ;
+            int bytesPerSample = firstBeatReader.getBitsPerSample() * firstBeatReader.getNumChannels() / 8;
 
         player = new AudioTrack.Builder()
                 .setTransferMode(AudioTrack.MODE_STATIC)
@@ -53,14 +56,14 @@ public class MainActivity extends AppCompatActivity {
                         .build())
                 .setAudioFormat(new AudioFormat.Builder()
                                  .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                                 .setSampleRate(44100)
+                                 .setSampleRate(firstBeatReader.getSampleRate())
                                  .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
                         .build())
                 .setBufferSizeInBytes(fullBufferSize)
                 .setSessionId(AudioManager.AUDIO_SESSION_ID_GENERATE)
                 .build();
 
-        player.write(fullLengthByteArray,startOfData,fullLengthByteArray.length - startOfData);
+        player.write(finalBytes,0,finalBytes.length);
         player.setLoopPoints(0,fullBufferSize/bytesPerSample,-1);
         } catch (Exception e) {
             e.printStackTrace();
@@ -74,24 +77,25 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        bpm = 120;
+        bpm = 250;
         beatsPerBar = 4;
         initialiseSound();
 
         setContentView(R.layout.activity_main);
     }
 
-    private byte[] addSilence(ByteArrayOutputStream originalSound, int intendedMillis, WaveFileReader reader) {
+    private byte[] createBeatWithSilence(WaveFileReader reader) {
+        int intendedMillis = millis();
+        byte[] originalSound = reader.getDataChunk();
         int currentDataSize = reader.getDataSize();
         double bytesPerMilli = reader.dataSizePerMillisecond();
         int sampleBytes = reader.getBitsPerSample() * reader.getNumChannels() / 8;
         int intendedDataSize = (int) Math.round((intendedMillis * bytesPerMilli) / sampleBytes) * sampleBytes ;
         int shortFall = intendedDataSize - currentDataSize;
-        byte[] origSoundBA = originalSound.toByteArray();
-        int origFileSize = origSoundBA.length;
+        int origFileSize = originalSound.length;
         byte[] output = new byte[origFileSize + shortFall];
         int index = 0;
-        for (byte b : origSoundBA) {
+        for (byte b : originalSound) {
             if (index < output.length) {
              output[index] = b;
              index++;
