@@ -36,15 +36,17 @@ public class MainActivity extends AppCompatActivity {
             byte[] fullLengthFirstBeat = createBeatWithSilence(firstBeatReader);
             byte[] fullLengthOtherBeat = createBeatWithSilence(otherBeatReader);
             ByteArrayOutputStream finalSound = new ByteArrayOutputStream();
-            finalSound.write(fullLengthFirstBeat);
-            finalSound.write(fullLengthOtherBeat);
-            finalSound.write(fullLengthOtherBeat);
-            finalSound.write(fullLengthOtherBeat);
+            for (int i = 1; i <= beatsPerBar; i++) {
+                if (i==1) {
+                    finalSound.write(fullLengthFirstBeat);
+                } else {
+                    finalSound.write(fullLengthOtherBeat);
+                }
+            }
+
             byte[] finalBytes = finalSound.toByteArray();
 
-            int fullBufferSize = (fullLengthFirstBeat.length)
-                    * beatsPerBar
-                    ;
+            int fullBufferSize = (fullLengthFirstBeat.length) * beatsPerBar;
             int bytesPerSample = firstBeatReader.getBitsPerSample() * firstBeatReader.getNumChannels() / 8;
 
         player = new AudioTrack.Builder()
@@ -77,8 +79,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        bpm = 250;
-        beatsPerBar = 4;
+        bpm = 120;
+        beatsPerBar = 5;
         initialiseSound();
 
         setContentView(R.layout.activity_main);
