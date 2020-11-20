@@ -15,9 +15,10 @@ public class WaveFileReader {
     private final WavFileProperty NUM_CHANNELS = new WavFileProperty(10,2,WavFilePropertyFormat.HEX_LITTLE_ENDIAN, "fmt ", "numChannels");
     private final WavFileProperty SAMPLE_RATE = new WavFileProperty(12,4,WavFilePropertyFormat.HEX_LITTLE_ENDIAN, "fmt ", "sampleRate");
     private final WavFileProperty BITS_PER_SAMPLE = new WavFileProperty(22,2,WavFilePropertyFormat.HEX_LITTLE_ENDIAN, "fmt ", "bitsPerSample");
+    private final WavFileProperty BYTE_RATE = new WavFileProperty(16,4,WavFilePropertyFormat.HEX_LITTLE_ENDIAN, "fmt ", "byteRate");
     private final WavFileProperty DATA_SIZE = new WavFileProperty(4,4,WavFilePropertyFormat.HEX_LITTLE_ENDIAN, "data", "dataSize");
 
-    private final List<WavFileProperty> properties = Arrays.asList(CHUNK_SIZE, NUM_CHANNELS, SAMPLE_RATE, DATA_SIZE, BITS_PER_SAMPLE);
+    private final List<WavFileProperty> properties = Arrays.asList(CHUNK_SIZE, NUM_CHANNELS, SAMPLE_RATE, BYTE_RATE, DATA_SIZE, BITS_PER_SAMPLE);
 
 
     private int chunkSize;
@@ -25,6 +26,7 @@ public class WaveFileReader {
     private int sampleRate;
     private int dataSize;
     private int bitsPerSample;
+    private int byteRate;
     private byte[] dataChunk;
 
     public WaveFileReader (InputStream beat) throws NoSuchFieldException, IllegalAccessException {
@@ -144,8 +146,8 @@ public class WaveFileReader {
         return (int) ((double) dataSize / (bitsPerSample / 8) / numChannels / sampleRate * 1000);
     }
 
-    public double dataSizePerMillisecond() {
-        return ((double) sampleRate * numChannels * bitsPerSample  / 8 / 1000);
+    public int getByteRate() {
+        return byteRate;
     }
 
     public byte[] getDataChunk() {
