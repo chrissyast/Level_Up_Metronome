@@ -60,6 +60,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void instantiatePlayer(WaveFileReader reader, int fullBufferSize) {
+        int channels = reader.getNumChannels() == 1 ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO;
+        int encoding = 0;
+        switch (reader.getBitsPerSample()) {
+            case 8:
+                encoding = AudioFormat.ENCODING_PCM_8BIT;
+               break;
+            case 16:
+                encoding = AudioFormat.ENCODING_PCM_16BIT;
+                break;
+            default:
+                encoding = AudioFormat.ENCODING_PCM_16BIT;
+        };
+
         if (Build.VERSION.SDK_INT >= 23) {
             player = new AudioTrack.Builder()
                     .setTransferMode(AudioTrack.MODE_STATIC)
@@ -69,17 +82,16 @@ public class MainActivity extends AppCompatActivity {
                             //        .setLegacyStreamType(AudioManager.STREAM_MUSIC)  // causes blip on first rep
                             .build())
                     .setAudioFormat(new AudioFormat.Builder()
-                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                            .setEncoding(encoding)
                             .setSampleRate(reader.getSampleRate())
-                            .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+                            .setChannelMask(channels)
                             .build())
                     .setBufferSizeInBytes(fullBufferSize)
                     .setSessionId(AudioManager.AUDIO_SESSION_ID_GENERATE)
                     .build();
         } else {
-            player = new AudioTrack(AudioManager.STREAM_MUSIC, reader.getSampleRate(), AudioFormat.CHANNEL_OUT_STEREO, AudioFormat.ENCODING_PCM_16BIT, fullBufferSize, AudioTrack.MODE_STATIC);
+            player = new AudioTrack(AudioManager.STREAM_MUSIC, reader.getSampleRate(), channels, encoding, fullBufferSize, AudioTrack.MODE_STATIC);
         }
-
 
     }
 
