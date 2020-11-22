@@ -23,6 +23,11 @@ public class MainActivity extends AppCompatActivity {
         player.play();
     }
 
+    private void stopSound() {
+        player.stop();
+        // TODO restarted audio doesnt' loop
+    }
+
     private int millis() {
         return 1000 * 60 / bpm;
     }
@@ -65,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
         switch (reader.getBitsPerSample()) {
             case 8:
                 encoding = AudioFormat.ENCODING_PCM_8BIT;
-               break;
+                break;
             case 16:
                 encoding = AudioFormat.ENCODING_PCM_16BIT;
                 break;
@@ -96,7 +101,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void handleButtonPress(View view) {
-        playSound();
+        if (player.getPlayState() == AudioTrack.PLAYSTATE_PLAYING) {
+            stopSound();
+        }
+        else {
+            playSound();
+        }
     }
 
     @Override
